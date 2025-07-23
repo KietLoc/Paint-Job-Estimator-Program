@@ -1,90 +1,101 @@
 #include <iostream>
 #include <cmath>
-#include <iomanip>
+#include <vector>
 using namespace std;
 
 // Constants
 const double SQFT_PER_GALLON = 110.0;
-const double LABOR_PER_SQFT = 8.0 / 110.0;  // labor hours per square foot
+const double SQFT_PER_LABOR_HOUR = 110.0 / 8.0; // i.e., 8 hours per 110 sqft
 const double LABOR_RATE = 25.0;
 
-// Function prototypes
-int getRooms();
-double getSqFt();             // single prompt for square footage per room
-double getPricePerGallon();   // single prompt for paint cost per gallon
-int gallonsForRoom(double sqft);
-double laborHoursForRoom(double sqft);
-void displayEstimate(int rooms, int gallons, double laborHrs, double paintCost, double laborCost);
-
-int main() {
-    int totalRooms = getRooms();
-    double sqft = getSqFt();                  // asked once
-    double pricePerGallon = getPricePerGallon();  // asked once
-
-    // compute for one room and multiply
-    int gallonsPerRoom = gallonsForRoom(sqft);
-    double laborHrsPerRoom = laborHoursForRoom(sqft);
-
-    // totals:
-    int totalGallons = gallonsPerRoom * totalRooms;
-    double totalLaborHours = laborHrsPerRoom * totalRooms;
-    double totalPaintCost = totalGallons * pricePerGallon;
-    double totalLaborCost = totalLaborHours * LABOR_RATE;
-
-    cout << fixed << setprecision(2);
-    displayEstimate(totalRooms, totalGallons, totalLaborHours, totalPaintCost, totalLaborCost);
-    return 0;
-}
-
-// Prompt for number of rooms (>= 1)
+// Gets number of rooms from user (must be ??1)
 int getRooms() {
     int rooms;
     do {
         cout << "Enter number of rooms to be painted (>= 1): ";
         cin >> rooms;
-        if (rooms < 1) cout << "  Error: must enter at least 1 room.\n";
+        if (rooms < 1)
+            cout << "  Error: number of rooms must be at least 1.\n";
     } while (rooms < 1);
     return rooms;
 }
 
-// Prompt square footage per room (>= 0)
-double getSqFt() {
+// Gets wall space in square feet for a room (must be ??0)
+double getSqFt(int roomNumber) {
     double sqft;
     do {
-        cout << "Enter square feet of wall space per room (>= 0): ";
+        cout << "Enter square feet for room #" << roomNumber << " (>= 0): ";
         cin >> sqft;
-        if (sqft < 0) cout << "  Error: square footage cannot be negative.\n";
+        if (sqft < 0)
+            cout << "  Error: square footage cannot be negative.\n";
     } while (sqft < 0);
     return sqft;
 }
 
-// Prompt paint price per gallon (>= $10)
+// Gets paint price per gallon (must be >= $10.00)
 double getPricePerGallon() {
     double price;
     do {
         cout << "Enter price per gallon of paint (>= $10.00): ";
         cin >> price;
-        if (price < 10.0) cout << "  Error: price must be at least $10.00.\n";
+        if (price < 10.0)
+            cout << "  Error: price must be at least $10.00.\n";
     } while (price < 10.0);
     return price;
 }
 
-// Compute gallons needed (per room), rounding up
+// Calculates gallons needed, rounding up to next whole gallon
+// Preconditions: sqft >= 0
+// Postcondition: returns integer gallons >= 0
 int gallonsForRoom(double sqft) {
     return static_cast<int>(ceil(sqft / SQFT_PER_GALLON));
 }
 
-// Compute labor hours needed (per room)
+// Calculates labor hours required (may be fractional)
+// Preconditions: sqft >= 0
 double laborHoursForRoom(double sqft) {
-    return sqft * LABOR_PER_SQFT;
+    return (sqft / SQFT_PER_GALLON) * 8.0;
 }
 
-// Display final estimate
-void displayEstimate(int rooms, int gallons, double laborHrs, double paintCost, double laborCost) {
-    cout << "\nEstimate for Painting " << rooms << " room" << (rooms > 1 ? "s" : "") << ":\n";
-    cout << "Gallons of paint to purchase: " << gallons << "\n";
-    cout << "Total labor hours required: " << laborHrs << "\n";
-    cout << "Cost of Paint: $" << paintCost << "\n";
-    cout << "Cost of Labor: $" << laborCost << "\n";
-    cout << "Total cost for job: $" << (paintCost + laborCost) << "\n";
+// Displays final estimate with totals
+void displayEstimate(int totalRooms, int totalGallons,
+    double totalLaborHours, double paintCost,
+    double laborCost)
+{
+    cout << "\nEstimate for Painting " << totalRooms << " room";
+    if (totalRooms > 1) cout << "s";
+    cout << ":\n";
+    cout << "Gallons of paint to purchase: " << totalGallons << "\n";
+    cout << "Number of hours required to paint: " << totalLaborHours << "\n";
+    cout << "Cost of Paint: $" << fixed << setprecision(2) << paintCost << "\n";
+    cout << "Cost of Labor: $" << fixed << setprecision(2) << laborCost << "\n";
+    cout << "Total cost for job: $" << fixed << setprecision(2)
+        << (paintCost + laborCost) << "\n";
+}
+
+int main() {
+    int totalRooms = getRooms();
+
+    int totalGallons = 0;
+    double totalLaborHours = 0.0;
+    double totalPaintCost = 0.0;
+    double totalLaborCost = 0.0;
+
+    for (int i = 1; i <= totalRooms; ++i) {
+        double sqft = getSqFt(i);
+        double pricePerGallon = getPricePerGallon();
+
+        int gallons = gallonsForRoom(sqft);
+        double laborHrs = laborHoursForRoom(sqft);
+
+        totalGallons += gallons;
+        totalLaborHours += laborHrs;
+        totalPaintCost += gallons * pricePerGallon;
+        totalLaborCost += laborHrs * LABOR_RATE;
+    }
+
+    displayEstimate(totalRooms, totalGallons, totalLaborHours,
+        totalPaintCost, totalLaborCost);
+
+    return 0;
 }
